@@ -3,7 +3,9 @@ const ethers = require('ethers');
 const fs = require('fs');
 
 const revaStakingPoolAbi = require('./RevaStakingPool.json');
+const revaAutoCompoundPoolAbi = require('./RevaAutoCompoundPool.json');
 const revaStakingPoolAddress = '0x8B7b2a115201ACd7F95d874D6A9432FcEB9C466A';
+const revaAutoCompoundPoolAddress = '0xe8f1CDa385A58ae1C1c1b71631dA7Ad6d137d3cb';
 const blockNumber = 12948624;
 
 const rpcEndpoint = 'https://speedy-nodes-nyc.moralis.io/0a0c712dcc0b75a2d155d4cf/bsc/mainnet/archive';
@@ -26,6 +28,7 @@ async function main() {
     console.log(holders.length);
 
     const revaStakingPoolContract = new ethers.Contract(revaStakingPoolAddress, revaStakingPoolAbi, provider);
+    const revaAutoCompoundPoolContract = new ethers.Contract(revaAutoCompoundPoolAddress, revaAutoCompoundPoolAbi, provider);
     let snapshot = [];
     for (let i = 0; i < holders.length; i++) {
         console.log(i);
@@ -34,7 +37,13 @@ async function main() {
             const balance1 = (await revaStakingPoolContract.userPoolInfo(1, holder, { blockTag: blockNumber }))[0];
             const balance2 = (await revaStakingPoolContract.userPoolInfo(2, holder, { blockTag: blockNumber }))[0];
             const balance3 = (await revaStakingPoolContract.userPoolInfo(3, holder, { blockTag: blockNumber }))[0];
-            const balance = balance1.add(balance2.mul(2)).add(balance3.mul(3));
+            const acBalance1 = (await revaAutoCompoundPoolContract.balanceOf(1, holder, { blockTag: blockNumber }));
+            const acBalance2 = (await revaAutoCompoundPoolContract.balanceOf(2, holder, { blockTag: blockNumber }));
+            const acBalance3 = (await revaAutoCompoundPoolContract.balanceOf(3, holder, { blockTag: blockNumber }));
+            const b1 = balance1.add(acBalance1);
+            const b2 = balance2.add(acBalance2);
+            const b3 = balance3.add(acBalance3);
+            const balance = b1.add(b2.mul(2)).add(b3.mul(3));
             snapshot.push({
                 address: holder,
                 balance: ethers.utils.formatEther(balance)
